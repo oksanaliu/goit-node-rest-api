@@ -25,7 +25,7 @@ export const deleteContact = async (req, res, next) => {
     const { id } = req.params;
     const removed = await contactsService.removeContact(id);
     if (!removed) return res.status(404).json({ message: 'Not found' });
-    res.status(200).json(removed);
+    res.status(200).json({ message: 'contact deleted' });
   } catch (err) {
     next(err);
   }
@@ -33,8 +33,13 @@ export const deleteContact = async (req, res, next) => {
 
 export const createContact = async (req, res, next) => {
   try {
-    const { name, email, phone } = req.body;
-    const created = await contactsService.addContact(name, email, phone);
+    const { name, email, phone, favorite } = req.body;
+    const created = await contactsService.addContact({
+      name,
+      email,
+      phone,
+      favorite,
+    });
     res.status(201).json(created);
   } catch (err) {
     next(err);
@@ -57,10 +62,26 @@ export const updateContact = async (req, res, next) => {
   }
 };
 
+export const updateStatusContact = async (req, res, next) => {
+  try {
+    const { favorite } = req.body;
+    if (typeof favorite === 'undefined') {
+      return res.status(400).json({ message: 'missing field favorite' });
+    }
+    const { id } = req.params;
+    const updated = await contactsService.updateFavorite(id, favorite);
+    if (!updated) return res.status(404).json({ message: 'Not found' });
+    res.status(200).json(updated);
+  } catch (err) {
+    next(err);
+  }
+};
+
 export default {
   getAllContacts,
   getOneContact,
   deleteContact,
   createContact,
   updateContact,
+  updateStatusContact,
 };
