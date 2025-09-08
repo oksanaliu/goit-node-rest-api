@@ -8,7 +8,8 @@ const validateBody = (schema) => {
     });
 
     if (error) {
-      return next(HttpError(400, error.message));
+      const messages = error.details.map((e) => e.message);
+      return next(HttpError(400, messages.join(', ')));
     }
 
     next();
