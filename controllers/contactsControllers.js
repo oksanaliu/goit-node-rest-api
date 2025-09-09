@@ -2,7 +2,8 @@ import contactsService from '../services/contactsServices.js';
 
 export const getAllContacts = async (req, res, next) => {
   try {
-    const items = await contactsService.listContacts();
+    const userId = req.user.id;
+    const items = await contactsService.listContacts(userId);
     res.status(200).json(items);
   } catch (err) {
     next(err);
@@ -11,8 +12,9 @@ export const getAllContacts = async (req, res, next) => {
 
 export const getOneContact = async (req, res, next) => {
   try {
+    const userId = req.user.id;
     const { id } = req.params;
-    const item = await contactsService.getContactById(id);
+    const item = await contactsService.getContactById(userId, id);
     if (!item) return res.status(404).json({ message: 'Not found' });
     res.status(200).json(item);
   } catch (err) {
@@ -22,8 +24,9 @@ export const getOneContact = async (req, res, next) => {
 
 export const deleteContact = async (req, res, next) => {
   try {
+    const userId = req.user.id;
     const { id } = req.params;
-    const removed = await contactsService.removeContact(id);
+    const removed = await contactsService.removeContact(userId, id);
     if (!removed) return res.status(404).json({ message: 'Not found' });
     res.status(200).json({ message: 'contact deleted' });
   } catch (err) {
@@ -33,8 +36,9 @@ export const deleteContact = async (req, res, next) => {
 
 export const createContact = async (req, res, next) => {
   try {
+    const userId = req.user.id;
     const { name, email, phone, favorite } = req.body;
-    const created = await contactsService.addContact({
+    const created = await contactsService.addContact(userId, {
       name,
       email,
       phone,
@@ -53,8 +57,9 @@ export const updateContact = async (req, res, next) => {
         .status(400)
         .json({ message: 'Body must have at least one field' });
     }
+    const userId = req.user.id;
     const { id } = req.params;
-    const updated = await contactsService.updateContact(id, req.body);
+    const updated = await contactsService.updateContact(userId, id, req.body);
     if (!updated) return res.status(404).json({ message: 'Not found' });
     res.status(200).json(updated);
   } catch (err) {
@@ -68,8 +73,9 @@ export const updateStatusContact = async (req, res, next) => {
     if (typeof favorite === 'undefined') {
       return res.status(400).json({ message: 'missing field favorite' });
     }
+    const userId = req.user.id;
     const { id } = req.params;
-    const updated = await contactsService.updateFavorite(id, favorite);
+    const updated = await contactsService.updateFavorite(userId, id, favorite);
     if (!updated) return res.status(404).json({ message: 'Not found' });
     res.status(200).json(updated);
   } catch (err) {

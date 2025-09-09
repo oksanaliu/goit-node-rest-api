@@ -1,34 +1,46 @@
 import { Contact } from '../models/contact.js';
 
-async function listContacts() {
-  return Contact.findAll({ order: [['id', 'ASC']] });
+async function listContacts(ownerId) {
+  return Contact.findAll({
+    where: { owner: ownerId },
+    order: [['id', 'ASC']],
+  });
 }
 
-async function getContactById(contactId) {
-  return Contact.findByPk(contactId);
+async function getContactById(ownerId, contactId) {
+  return Contact.findOne({
+    where: { id: contactId, owner: ownerId },
+  });
 }
 
-async function addContact(data) {
-  return Contact.create(data);
+async function addContact(ownerId, data) {
+  return Contact.create({ ...data, owner: ownerId });
 }
 
-async function updateContact(contactId, data) {
+async function updateContact(ownerId, contactId, data) {
   const [count, [updated]] = await Contact.update(data, {
-    where: { id: contactId },
+    where: { id: contactId, owner: ownerId },
     returning: true,
   });
   return count ? updated : null;
 }
 
-async function removeContact(contactId) {
-  const count = await Contact.destroy({ where: { id: contactId } });
-  return count > 0;
+async function removeContact(ownerId, contactId) {
+  const item = await Contact.findOne({
+    where: { id: contactId, owner: ownerId },
+  });
+  if (!item) return null;
+  await item.destroy();
+  return item;
 }
 
-async function updateFavorite(contactId, favorite) {
+async function updateFavorite(ownerId, contactId, favorite) {
   const [count, [updated]] = await Contact.update(
     { favorite },
-    { where: { id: contactId }, returning: true }
+    {
+      where: { id: contactId, owner: ownerId },
+      returning: true,
+    }
   );
   return count ? updated : null;
 }

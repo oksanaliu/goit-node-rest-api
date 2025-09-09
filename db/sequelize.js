@@ -10,7 +10,9 @@ export const sequelize = new Sequelize(DB_NAME, DB_USER, DB_PASS, {
   dialect: 'postgres',
   dialectModule: pg,
   logging: NODE_ENV !== 'production',
-  dialectOptions: { ssl: { require: true, rejectUnauthorized: false } },
+  dialectOptions: {
+    ssl: { require: true, rejectUnauthorized: false },
+  },
 });
 
 export async function connectDB() {
