@@ -11,6 +11,10 @@ const User = sequelize.define(
       defaultValue: 'starter',
     },
     token: { type: DataTypes.STRING, defaultValue: null },
+    avatarURL: {
+      type: DataTypes.STRING,
+      defaultValue: null,
+    },
   },
   {
     tableName: 'users',
