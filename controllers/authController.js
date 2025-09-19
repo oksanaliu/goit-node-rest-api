@@ -3,7 +3,15 @@ import jwt from 'jsonwebtoken';
 import gravatar from 'gravatar';
 import fs from 'fs/promises';
 import path from 'path';
-import User from '../models/User.js';
+
+import {
+  findUserByEmail,
+  findUserById,
+  createUser,
+  setUserToken,
+  clearUserToken,
+  updateUserAvatar,
+} from '../services/authService.js';
 
 const { JWT_SECRET, JWT_EXPIRES_IN = '23h' } = process.env;
 const avatarsDir = path.join(process.cwd(), 'public', 'avatars');
@@ -14,16 +22,20 @@ export const register = async (req, res, next) => {
       .trim()
       .toLowerCase();
     const { password } = req.body;
-    const existingUser = await User.findOne({ where: { email } });
+
+    const existingUser = await findUserByEmail(email);
     if (existingUser) return res.status(409).json({ message: 'Email in use' });
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const avatarURL = gravatar.url(email, { s: '250', d: 'retro' }, true);
-    const newUser = await User.create({
+
+    const newUser = await createUser({
       email,
       password: hashedPassword,
       subscription: 'starter',
       avatarURL,
     });
+
     return res.status(201).json({
       user: {
         email: newUser.email,
@@ -42,16 +54,20 @@ export const login = async (req, res, next) => {
       .trim()
       .toLowerCase();
     const { password } = req.body;
-    const user = await User.findOne({ where: { email } });
+
+    const user = await findUserByEmail(email);
     if (!user)
       return res.status(401).json({ message: 'Email or password is wrong' });
+
     const ok = await bcrypt.compare(password, user.password);
     if (!ok)
       return res.status(401).json({ message: 'Email or password is wrong' });
+
     const token = jwt.sign({ id: user.id }, JWT_SECRET, {
       expiresIn: JWT_EXPIRES_IN,
     });
-    await user.update({ token });
+    await setUserToken(user.id, token);
+
     return res.status(200).json({
       token,
       user: {
@@ -67,9 +83,10 @@ export const login = async (req, res, next) => {
 
 export const logout = async (req, res, next) => {
   try {
-    const user = await User.findByPk(req.user.id);
+    const user = await findUserById(req.user.id);
     if (!user) return res.status(401).json({ message: 'Not authorized' });
-    await user.update({ token: null });
+
+    await clearUserToken(user.id);
     return res.status(204).send();
   } catch (err) {
     next(err);
@@ -89,13 +106,19 @@ export const updateAvatar = async (req, res, next) => {
   try {
     if (!req.file)
       return res.status(400).json({ message: 'Avatar file is required' });
+
     const { id } = req.user;
     const { path: tempPath, originalname } = req.file;
+
     const filename = `${id}_${originalname}`;
     const finalPath = path.join(avatarsDir, filename);
+
     await fs.rename(tempPath, finalPath);
+
     const avatarURL = `/avatars/${filename}`;
-    await User.update({ avatarURL }, { where: { id } });
+    const ok = await updateUserAvatar(id, avatarURL);
+    if (!ok) return res.status(401).json({ message: 'Not authorized' });
+
     return res.status(200).json({ avatarURL });
   } catch (err) {
     if (req.file?.path) {
@@ -107,10 +130,4 @@ export const updateAvatar = async (req, res, next) => {
   }
 };
 
-export default {
-  register,
-  login,
-  logout,
-  getCurrent,
-  updateAvatar,
-};
+export default { register, login, logout, getCurrent, updateAvatar };
