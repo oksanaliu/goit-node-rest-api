@@ -9,8 +9,9 @@ const PORT = process.env.PORT || 3000;
 (async () => {
   try {
     await connectDB();
-    await sequelize.sync();
+    const NEED_ALTER = process.env.DB_ALTER === 'true';
 
+    await sequelize.sync(NEED_ALTER ? { alter: true } : undefined);
     app.listen(PORT, () => {
       console.log(`Server is running. Use our API on port: ${PORT}`);
     });

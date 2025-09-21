@@ -30,3 +30,17 @@ export const updateUserAvatar = async (id, avatarURL) => {
   const [count] = await User.update({ avatarURL }, { where: { id } });
   return count > 0;
 };
+
+export async function verifyByToken(verificationToken) {
+  const user = await User.findOne({ where: { verificationToken } });
+  if (!user) return { notFound: true };
+  await user.update({ verify: true, verificationToken: null });
+  return { ok: true };
+}
+
+export async function setVerificationToken(id, token) {
+  const user = await User.findByPk(id);
+  if (!user) return null;
+  await user.update({ verificationToken: token });
+  return user;
+}

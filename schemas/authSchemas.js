@@ -16,4 +16,11 @@ export const loginSchema = Joi.object({
   password: Joi.string().min(6).max(128).required(),
 });
 
-export default { registerSchema, loginSchema };
+export const resendEmailSchema = Joi.object({
+  email: Joi.string()
+    .trim()
+    .email({ tlds: { allow: false } })
+    .required(),
+});
+
+export default { registerSchema, loginSchema, resendEmailSchema };
